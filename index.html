@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wordbench — Sentence Puzzles &amp; Reading Shelf</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#20263B;
+    --ink-soft:#3B4260;
+    --paper:#F5EFE0;
+    --paper-alt:#ECE3CB;
+    --card:#FFFDF6;
+    --teal:#2F6F62;
+    --teal-deep:#1F4D43;
+    --mustard:#D9A62E;
+    --rose:#B94A48;
+    --line:#D8CDAE;
+    --radius:14px;
+    --shadow:0 6px 18px rgba(32,38,59,0.10);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  h1,h2,h3,.display{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    letter-spacing:-0.01em;
+  }
+  .mono{font-family:'IBM Plex Mono', monospace;}
+  a{color:inherit;}
+
+  /* ---------- Top bar ---------- */
+  header.top{
+    background:var(--ink);
+    color:var(--paper);
+    padding:22px 24px 0 24px;
+  }
+  .top-inner{max-width:960px;margin:0 auto;}
+  .brand{
+    display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+  }
+  .brand h1{font-size:1.7rem;margin:0;color:#fff;}
+  .brand .tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.72rem;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--mustard);
+    background:rgba(217,166,46,0.14);
+    padding:3px 8px;
+    border-radius:20px;
+  }
+  .brand p{margin:6px 0 18px 0;color:#C9CEE0;font-size:0.95rem;max-width:56ch;}
+
+  nav.tabs{display:flex;gap:2px;}
+  nav.tabs button{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.85rem;
+    letter-spacing:0.02em;
+    background:transparent;
+    border:none;
+    color:#9BA1C2;
+    padding:12px 18px;
+    cursor:pointer;
+    border-radius:10px 10px 0 0;
+    position:relative;
+    top:1px;
+  }
+  nav.tabs button.active{
+    background:var(--paper);
+    color:var(--ink);
+    font-weight:600;
+  }
+  nav.tabs button:not(.active):hover{color:#fff;}
+
+  main{max-width:960px;margin:0 auto;padding:28px 24px 70px 24px;}
+  section.panel{display:none;}
+  section.panel.active{display:block;}
+
+  /* ---------- Level picker ---------- */
+  .level-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px;}
+  .level-stamp{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:0.85rem;
+    border:2px solid var(--ink);
+    background:var(--card);
+    color:var(--ink);
+    padding:8px 14px;
+    border-radius:8px;
+    cursor:pointer;
+    transform:rotate(-1deg);
+    transition:transform .12s ease, background .12s ease, color .12s ease;
+  }
+  .level-stamp:nth-child(even){transform:rotate(1deg);}
+  .level-stamp:hover{transform:rotate(0deg) scale(1.04);}
+  .level-stamp.active{
+    background:var(--teal);
+    border-color:var(--teal-deep);
+    color:#fff;
+    transform:rotate(0deg) scale(1.06);
+  }
+
+  /* ---------- Game card ---------- */
+  .game-card{
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:28px;
+    border:1px solid var(--line);
+  }
+  .game-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+  .stat{font-family:'IBM Plex Mono',monospace;font-size:0.85rem;color:var(--ink-soft);}
+  .stat b{color:var(--teal-deep);}
+
+  .answer-line{
+    min-height:64px;
+    border-bottom:3px solid var(--ink);
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:8px;
+    padding:8px 4px 14px 4px;
+    margin-bottom:22px;
+  }
+  .answer-line:empty::before{
+    content:"Tap the words below in order to build the sentence.";
+    color:#9A9784;
+    font-style:italic;
+    font-size:0.95rem;
+  }
+  .tray{
+    display:flex;flex-wrap:wrap;gap:10px;
+    padding:16px;
+    background:var(--paper-alt);
+    border-radius:10px;
+    min-height:70px;
+  }
+  .tile{
+    font-family:'IBM Plex Mono',monospace;
+    font-weight:600;
+    font-size:1rem;
+    background:#fff;
+    border:1.5px solid var(--ink);
+    border-radius:7px;
+    padding:9px 14px;
+    cursor:pointer;
+    box-shadow:2px 2px 0 var(--ink);
+    transition:transform .08s ease;
+    user-select:none;
+  }
+  .tile:hover{transform:translateY(-2px);}
+  .tile:active{transform:translateY(0);box-shadow:1px 1px 0 var(--ink);}
+  .tile.placed{
+    background:var(--teal);
+    color:#fff;
+    border-color:var(--teal-deep);
+    box-shadow:2px 2px 0 var(--teal-deep);
+  }
+
+  .game-actions{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap;}
+  button.btn{
+    font-family:'Work Sans',sans-serif;
+    font-weight:600;
+    font-size:0.92rem;
+    padding:11px 20px;
+    border-radius:9px;
+    border:2px solid var(--ink);
+    background:var(--ink);
+    color:#fff;
+    cursor:pointer;
+  }
+  button.btn.secondary{background:transparent;color:var(--ink);}
+  button.btn.ghost{border-color:var(--line);color:var(--ink-soft);}
+  button.btn:disabled{opacity:0.45;cursor:not-allowed;}
+
+  .hint-line{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.82rem;
+    color:var(--teal-deep);
+    background:rgba(47,111,98,0.08);
+    border-left:3px solid var(--teal);
+    padding:8px 12px;
+    border-radius:0 6px 6px 0;
+    margin-bottom:18px;
+    min-height:1.2em;
+  }
+  .hint-line:empty{display:none;}
+
+  .feedback{
+    margin-top:16px;
+    font-weight:600;
+    font-size:0.98rem;
+    min-height:1.4em;
+  }
+  .feedback.correct{color:var(--teal-deep);}
+  .feedback.wrong{color:var(--rose);}
+
+  /* ---------- Reading library ---------- */
+  .lib-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:20px 22px;
+    margin-bottom:16px;
+    cursor:pointer;
+  }
+  .lib-card .lib-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .lib-card h3{margin:0 0 6px 0;font-size:1.15rem;}
+  .lib-meta{font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--ink-soft);}
+  .lib-badge{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.72rem;font-weight:600;
+    background:var(--mustard);
+    color:var(--ink);
+    padding:3px 9px;border-radius:20px;
+    white-space:nowrap;
+  }
+  .lib-preview{color:var(--ink-soft);font-size:0.92rem;margin-top:8px;line-height:1.5;}
+  .lib-full{display:none;margin-top:14px;border-top:1px dashed var(--line);padding-top:14px;line-height:1.7;font-size:1rem;}
+  .lib-card.open .lib-full{display:block;}
+  .lib-card.open .lib-preview{display:none;}
+  .lib-questions{margin-top:16px;background:var(--paper-alt);border-radius:8px;padding:14px 16px;}
+  .lib-questions p{margin:0 0 6px 0;font-weight:600;font-size:0.9rem;}
+  .lib-questions ol{margin:0;padding-left:20px;font-size:0.92rem;}
+  .lib-questions li{margin-bottom:4px;}
+
+  footer{
+    text-align:center;
+    font-family:'IBM Plex Mono',monospace;
+    font-size:0.75rem;
+    color:var(--ink-soft);
+    padding:30px 24px 40px 24px;
+  }
+
+  @media (max-width:600px){
+    .brand h1{font-size:1.4rem;}
+    .game-card{padding:20px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <h1>Wordbench</h1>
+      <span class="tag">A1 → C2</span>
+    </div>
+    <p>Put scrambled sentences back in order, then browse short reading passages leveled just for you.</p>
+    <nav class="tabs">
+      <button id="tabGameBtn" class="active">Sentence Puzzles</button>
+      <button id="tabLibBtn">Reading Shelf</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- ================= GAME PANEL ================= -->
+  <section id="gamePanel" class="panel active">
+    <div class="level-row" id="gameLevels"></div>
+
+    <div class="game-card">
+      <div class="game-meta">
+        <div class="stat">Score: <b id="scoreVal">0</b> &nbsp;•&nbsp; Streak: <b id="streakVal">0</b></div>
+        <div class="stat" id="progressVal">Sentence 1</div>
+      </div>
+
+      <div class="answer-line" id="answerLine"></div>
+      <div class="hint-line" id="hintLine"></div>
+      <div class="tray" id="tray"></div>
+
+      <div class="game-actions">
+        <button class="btn" id="checkBtn">Check answer</button>
+        <button class="btn secondary" id="clearBtn">Clear</button>
+        <button class="btn ghost" id="hintBtn">Hint</button>
+        <button class="btn ghost" id="nextBtn">Skip →</button>
+      </div>
+      <div class="feedback" id="feedback"></div>
+    </div>
+  </section>
+
+  <!-- ================= LIBRARY PANEL ================= -->
+  <section id="libPanel" class="panel">
+    <div class="level-row" id="libLevels"></div>
+    <div id="libList"></div>
+  </section>
+
+</main>
+
+<footer>Made for classroom use — add your own sentences and passages by editing the DATA section in this file.</footer>
+
+<script>
+/* =========================================================================
+   DATA — this is the only part you need to touch to add content.
+   Add new sentences or passages by copying the pattern of the existing ones.
+   ========================================================================= */
+
+const SENTENCES = {
+  A1: [
+    "I like to drink tea in the morning.",
+    "She has a small red bag.",
+    "We go to school by bus.",
+    "My brother can swim very well.",
+    "The cat is sleeping on the sofa.",
+    "They are watching a film tonight.",
+    "He always eats breakfast at seven.",
+    "This is my favorite book.",
+    "Can you open the window, please?",
+    "There are five chairs in the room."
+  ],
+  A2: [
+    "I usually visit my grandmother on Sundays.",
+    "She was cooking dinner when the phone rang.",
+    "We have already finished our homework.",
+    "He didn't go to work yesterday because he was sick.",
+    "My friends are planning a trip to the mountains.",
+    "You should drink more water every day.",
+    "I have never eaten sushi before.",
+    "They were watching television when I arrived.",
+    "She is going to study abroad next year.",
+    "Could you tell me where the station is?"
+  ],
+  B1: [
+    "Although it was raining, we decided to go for a walk.",
+    "If I had more free time, I would learn another language.",
+    "She has been working on this project for three months.",
+    "The manager asked us to finish the report by Friday.",
+    "I'm not sure whether he will come to the party or not.",
+    "Despite feeling tired, she continued studying for the exam.",
+    "By the time we arrived, the meeting had already started.",
+    "It is important to review your notes before every test.",
+    "He suggested that we take a shorter route to the city.",
+    "The more you practice speaking, the more confident you become."
+  ],
+  B2: [
+    "Had I known about the traffic, I would have left earlier.",
+    "The report, which took weeks to prepare, was rejected immediately.",
+    "Not only did she pass the exam, but she also got the highest score.",
+    "The committee is considering several proposals before making a final decision.",
+    "Regardless of the outcome, the team should be proud of their effort.",
+    "It wasn't until she moved abroad that she truly understood the culture.",
+    "The policy has been criticized for failing to address the root cause.",
+    "Given the current circumstances, postponing the event seems reasonable.",
+    "She would rather resign than compromise her professional principles.",
+    "The findings suggest a correlation, though not necessarily a direct cause."
+  ],
+  C1: [
+    "Were it not for his intervention, the negotiations would have collapsed entirely.",
+    "The extent to which the policy succeeds depends largely on public cooperation.",
+    "Seldom has a debate generated such polarized reactions across the industry.",
+    "The proposal, controversial as it may seem, addresses a long-standing structural issue.",
+    "Only by reassessing our assumptions can we arrive at a coherent solution.",
+    "So thoroughly was the argument dismantled that few critics dared respond.",
+    "Underlying the surface calm was a growing sense of institutional unease.",
+    "It is precisely this ambiguity that makes the contract difficult to enforce.",
+    "Had the evidence been presented earlier, the verdict might well have differed.",
+    "Rarely does a single reform manage to satisfy such competing interests."
+  ],
+  C2: [
+    "Not until the archives were declassified did the full extent of the deception become apparent.",
+    "So entrenched was the bureaucracy that even well-intentioned reforms withered on the vine.",
+    "It is one thing to concede a point; it is quite another to relinquish an entire worldview.",
+    "Nowhere is this paradox more acutely felt than in institutions ostensibly designed to prevent it.",
+    "Little did the committee anticipate the furor that its seemingly innocuous proposal would provoke.",
+    "Such was the subtlety of his argument that few in the audience grasped its implications until later.",
+    "Were the incentives structured differently, one suspects the outcome would have been markedly less perverse.",
+    "Far from resolving the ambiguity, the ruling merely displaced it onto a lower court.",
+    "That the theory remains unfalsified is no small testament to its explanatory resilience.",
+    "Only in hindsight does the inevitability of the collapse seem so glaringly obvious."
+  ]
+};
+
+const PASSAGES = {
+  A1: [
+    {
+      title: "A Day at the Market",
+      text: "Every Saturday, Mona goes to the market with her mother. The market is big and busy. There are fruits, vegetables, and flowers everywhere. Mona likes the red apples the best. Her mother buys tomatoes, onions, and bread. A man sells fresh fish near the gate. Another woman sells colorful flowers. Mona and her mother walk slowly and look at everything. After shopping, they drink orange juice at a small stand. Mona carries a small bag. Her mother carries two big bags. They take a taxi home because the bags are heavy. Mona loves Saturdays.",
+      questions: ["Where does Mona go every Saturday?", "What does Mona like the best?", "How do they go home?"]
+    },
+    {
+      title: "My Family",
+      text: "My name is Sara. I have a small family. My father is a teacher. My mother is a nurse. I have one brother and one sister. My brother is ten years old. My sister is six years old. We live in a small house near the park. Every evening, we eat dinner together. On Sundays, we visit my grandparents. I love my family very much.",
+      questions: ["Who is a teacher in Sara's family?", "How many brothers and sisters does Sara have?", "What do they do on Sundays?"]
+    },
+    {
+      title: "The Weather Today",
+      text: "Today the weather is cold and windy. The sky is grey, and it looks like rain. I am wearing a warm coat, a scarf, and gloves. My sister does not like cold weather. She prefers hot, sunny days at the beach. In winter, we often stay at home and drink hot tea. Tomorrow, the weather forecast says it will be sunny. I hope it is true because I want to go outside and play football with my friends.",
+      questions: ["What is the weather like today?", "What does the writer wear?", "What does the writer want to do tomorrow?"]
+    },
+    {
+      title: "My School Day",
+      text: "I wake up at seven o'clock every morning. I eat breakfast and then walk to school. My school starts at eight o'clock. I have four lessons before lunch: English, math, science, and art. At lunchtime, I eat with my friends in the canteen. After lunch, we have two more lessons. School finishes at three o'clock. Then I walk home and do my homework. In the evening, I watch television or read a book before bed.",
+      questions: ["What time does school start?", "How many lessons does the writer have before lunch?", "What does the writer do after school?"]
+    },
+    {
+      title: "My Pet Dog",
+      text: "I have a small brown dog. His name is Max. Max is very friendly and loves to play. Every morning, I take Max for a walk in the park. He likes to run and chase balls. Max also likes to sleep on my bed at night. My mother says Max is too big for my bed, but I don't mind. Max is my best friend. I feed him every day and give him fresh water.",
+      questions: ["What is the dog's name?", "Where does the writer take Max every morning?", "Where does Max like to sleep?"]
+    },
+    {
+      title: "My House",
+      text: "I live in a small house with my family. My house has three bedrooms, one kitchen, and one living room. There is a small garden behind the house with flowers and a tree. My bedroom is upstairs, next to my sister's room. I have a bed, a desk, and a bookshelf in my room. My favorite room is the kitchen because my mother cooks delicious food there. I feel happy and safe in my house.",
+      questions: ["How many bedrooms does the house have?", "What is in the garden?", "Why is the kitchen the writer's favorite room?"]
+    },
+    {
+      title: "A Quiet Weekend",
+      text: "Last weekend was quiet and relaxing. On Saturday morning, I cleaned my room and did some laundry. In the afternoon, I read a book in the garden. On Sunday, my family and I cooked lunch together. We made pasta with tomato sauce. After lunch, we watched a movie at home. In the evening, I called my best friend and talked for one hour. It was a simple weekend, but I enjoyed it.",
+      questions: ["What did the writer do on Saturday morning?", "What did the family cook on Sunday?", "Who did the writer call in the evening?"]
+    },
+    {
+      title: "Buying New Shoes",
+      text: "Yesterday, I went shopping with my mother. I needed new shoes for school. We went to a big shopping centre near our house. There were many shoe shops. I tried on five different pairs of shoes. Some were too small, and some were too big. Finally, I found a pair of black shoes that fit perfectly. My mother paid for the shoes. I was very happy with my new shoes.",
+      questions: ["Why did the writer go shopping?", "How many pairs of shoes did the writer try on?", "What color are the new shoes?"]
+    },
+    {
+      title: "A Birthday Party",
+      text: "Last Saturday, it was my sister's birthday. We had a party at our house. My mother made a big chocolate cake. My father decorated the living room with colorful balloons. Many of my sister's friends came to the party. We played games and danced to music. My sister opened her presents in the evening. She received a new bicycle from our parents. Everyone said the party was wonderful.",
+      questions: ["Whose birthday was it?", "What did the mother make?", "What present did the sister receive?"]
+    },
+    {
+      title: "My Morning Routine",
+      text: "Every day, I wake up at six thirty. First, I brush my teeth and wash my face. Then I get dressed and eat breakfast with my family. I usually eat bread, eggs, and a cup of milk. After breakfast, I pack my school bag and check my homework. I leave home at seven fifteen and walk to the bus stop. The bus arrives at seven thirty, and I arrive at school at eight o'clock.",
+      questions: ["What time does the writer wake up?", "What does the writer usually eat for breakfast?", "What time does the writer arrive at school?"]
+    },
+  ],
+  A2: [
+    {
+      title: "Learning to Ride a Bicycle",
+      text: "When Ahmed was ten years old, he wanted to learn how to ride a bicycle. His father bought him a small blue bike for his birthday. At first, Ahmed fell many times, but he didn't give up. Every evening after school, his father took him to the park to practice. His father held the back of the bike and ran beside him. After two weeks, Ahmed could ride without any help. He felt very proud of himself. Now he rides his bicycle to school every day with his friends. Ahmed says that learning to ride a bike taught him that practice is more important than talent. He hopes to teach his younger sister next year.",
+      questions: ["Who taught Ahmed to ride a bicycle?", "How long did it take Ahmed to learn?", "What does Ahmed plan to do next year?"]
+    },
+    {
+      title: "My Summer Holiday",
+      text: "Last summer, my family and I went on holiday to a small village near the sea. We stayed in a little house with a beautiful garden. Every morning, we walked to the beach and swam in the clear water. In the afternoons, we explored the village and tried local food at small restaurants. My favorite day was when we went fishing with a local fisherman. He taught us how to catch fish and cook them on the beach. We also visited an old castle on top of a hill. The view from the castle was amazing. I took many photos to remember the holiday. I hope we can go back again next year.",
+      questions: ["Where did the family stay during the holiday?", "What was the writer's favorite day?", "What did they visit on top of a hill?"]
+    },
+    {
+      title: "My First Job",
+      text: "When I turned sixteen, I got my first job at a small bakery near my house. I worked there every Saturday morning, helping to sell bread and cakes to customers. At first, I was nervous because I had never worked before. The owner, Mrs. Ahmed, was very kind and patient with me. She taught me how to use the cash register and how to talk politely to customers. After a few weeks, I felt more confident. I learned that working requires responsibility, but it also gave me a sense of independence. I used my first salary to buy a new phone. Looking back, that job taught me many useful skills that I still use today.",
+      questions: ["Where did the writer work?", "Who taught the writer how to use the cash register?", "What did the writer buy with the first salary?"]
+    },
+    {
+      title: "Moving to a New House",
+      text: "Two months ago, my family moved to a new house in a different city. At first, I didn't want to move because I would miss my old friends and my school. However, my parents explained that my father got a new job in this city. When we arrived, everything felt strange and unfamiliar. I didn't know anyone, and the new school seemed very big. Slowly, things got better. I made a new friend named Layla, who sits next to me in class. She showed me around the city and introduced me to other classmates. Now, three months later, I feel much happier here. I still miss my old friends, but I am starting to enjoy my new life.",
+      questions: ["Why did the family move?", "Who is Layla?", "How does the writer feel now, three months later?"]
+    },
+    {
+      title: "Cooking Dinner for Friends",
+      text: "Last Friday, I decided to cook dinner for three of my friends. I had never cooked for so many people before, so I was a little worried. I chose a simple recipe: grilled chicken with rice and vegetables. I went to the supermarket in the morning to buy fresh ingredients. In the afternoon, I spent almost two hours cooking and preparing the table. When my friends arrived, the food was ready, and the table looked nice with candles and flowers. Everyone enjoyed the meal and asked for the recipe. I felt proud that the dinner was successful. Next time, I want to try cooking a dessert as well.",
+      questions: ["What did the writer cook for the friends?", "How long did the writer spend cooking?", "What does the writer want to try next time?"]
+    },
+    {
+      title: "Visiting My Grandparents",
+      text: "Every summer, I spend two weeks visiting my grandparents in the countryside. They live in a small village far from the city, surrounded by fields and mountains. My grandfather grows vegetables in his garden, and my grandmother bakes bread every morning. I love waking up to the smell of fresh bread. During the day, I help my grandfather in the garden or go for long walks with my grandmother. In the evening, we sit outside and my grandfather tells stories about his childhood. There is no internet in their house, so I read books and talk with my family instead. These visits are always peaceful, and I always leave feeling relaxed and happy.",
+      questions: ["Where do the grandparents live?", "What does the grandfather grow?", "What does the writer do instead of using the internet?"]
+    },
+    {
+      title: "Learning English",
+      text: "I started learning English five years ago because I wanted to study abroad. At first, it was very difficult. I couldn't understand native speakers, and I was afraid to speak in class. My teacher encouraged me to practice every day, even for just fifteen minutes. I began watching English movies with subtitles and listening to English songs. Slowly, my listening skills improved. I also joined a conversation club where I could practice speaking with other students. It was scary at first, but everyone was friendly and patient. Now, I feel much more confident speaking English, although I still make mistakes sometimes. I believe that making mistakes is part of learning any language.",
+      questions: ["Why did the writer start learning English?", "What activities helped improve listening skills?", "How does the writer feel about making mistakes?"]
+    },
+    {
+      title: "A Weekend Trip to the Coast",
+      text: "Last weekend, my friends and I decided to take a short trip to the coast. We left the city early on Saturday morning and arrived at the beach by ten o'clock. The weather was perfect: sunny with a gentle breeze. We spent the morning swimming and playing volleyball on the sand. For lunch, we ate fresh seafood at a small restaurant by the harbor. In the afternoon, we rented bicycles and rode along the coastal path, stopping to take photos of the beautiful view. We stayed until sunset, watching the sky turn orange and pink. It was a simple trip, but it gave us all a much-needed break from our busy lives.",
+      questions: ["What time did they leave the city?", "What did they eat for lunch?", "What did they do in the afternoon?"]
+    },
+    {
+      title: "My Favorite Season",
+      text: "My favorite season is autumn. I love the way the leaves change color from green to orange, red, and yellow. The weather is cool but not too cold, which makes it comfortable to go for walks outside. In autumn, I enjoy drinking hot tea and eating warm soup. My family also celebrates a harvest festival every October, where we cook traditional food and visit relatives. Unlike summer, autumn is not too hot, and unlike winter, it is not too cold. I also like that the days become shorter, which makes evenings feel cozy. Every year, I look forward to autumn arriving after a long, hot summer.",
+      questions: ["Why does the writer like autumn weather?", "What festival does the family celebrate?", "How does autumn compare to summer and winter?"]
+    },
+    {
+      title: "The Day I Lost My Phone",
+      text: "Last month, I lost my phone while traveling on the bus to work. When I realized it was missing, I felt very worried because all my contacts and photos were on it. I asked the bus driver, but he hadn't seen it. I called my own number using a friend's phone, hoping someone would answer. Surprisingly, a kind stranger answered and said she found it under a seat. We arranged to meet at a coffee shop near my office. She returned my phone, and I thanked her with a small gift. This experience taught me to always back up my photos and important information, just in case something like this happens again.",
+      questions: ["Where did the writer lose the phone?", "How did the writer get the phone back?", "What lesson did the writer learn?"]
+    },
+  ],
+  B1: [
+    {
+      title: "The Rise of Remote Work",
+      text: "Over the past few years, remote work has changed the way many people think about their careers. Instead of commuting to an office every day, employees can now work from home, a cafe, or even another country. This shift has brought both advantages and challenges. On one hand, employees save time and money by avoiding daily travel, and many report feeling more relaxed and productive. On the other hand, some workers find it difficult to separate their professional and personal lives when their home becomes their office. Companies have also had to adapt, introducing new tools for communication and finding ways to maintain team spirit without face-to-face meetings. Experts predict that a mix of remote and office work, often called a hybrid model, will remain popular in the future, as it offers flexibility while keeping some benefits of in-person collaboration.",
+      questions: ["What are two advantages of remote work mentioned in the text?", "What challenge do some remote workers face?", "What do experts predict about the future of work?"]
+    },
+    {
+      title: "Why I Started Volunteering",
+      text: "Two years ago, I decided to start volunteering at a local shelter for stray animals. At first, my motivation was simple: I love animals and wanted to spend my free time doing something meaningful. However, as I continued volunteering, I realized the experience taught me much more than I expected. I learned patience while caring for frightened or injured animals, and I developed better communication skills by working alongside other volunteers from different backgrounds. Volunteering also gave me a new perspective on community responsibility; I began to understand that small individual actions, when combined, can create a significant positive impact. Although I still enjoy spending time with the animals themselves, what keeps me coming back every week is the sense of purpose the work gives me. I would encourage anyone considering volunteering to simply try it, even for a short time.",
+      questions: ["What was the writer's original motivation for volunteering?", "What skills did the writer develop?", "What does the writer say keeps them coming back?"]
+    },
+    {
+      title: "City Life or Countryside Life?",
+      text: "People often debate whether it is better to live in a busy city or a quiet countryside town. Those who prefer city life point to convenience: public transport, job opportunities, and entertainment are all easily accessible. Cities also offer diversity, allowing people to meet others from different cultures and backgrounds. On the other hand, supporters of countryside living argue that it offers a slower pace of life, cleaner air, and closer connections to nature. They also mention that countryside communities tend to be tighter-knit, with neighbors who know and support one another. Personally, I have lived in both environments, and I believe the right choice depends on a person's priorities. If career opportunities and social variety matter most, the city may suit you better. However, if peace and a connection to nature are more important, the countryside might be the wiser choice.",
+      questions: ["What advantage of city life is mentioned?", "What advantage of countryside life is mentioned?", "What does the writer say the choice depends on?"]
+    },
+    {
+      title: "Learning to Play the Guitar",
+      text: "When I turned twenty-five, I decided to finally learn something I had always wanted to try: playing the guitar. I bought a used acoustic guitar and found free lessons online. During the first few weeks, my fingers hurt from pressing the strings, and I struggled to switch between chords quickly. There were moments when I wanted to give up, especially when my playing sounded nothing like the songs I loved. However, I reminded myself that progress in any skill takes time and consistent practice. After about six months of practicing thirty minutes a day, I could finally play a full song without stopping. Now, more than a year later, I play guitar almost every evening to relax after work. Learning this instrument taught me that patience and regular practice matter far more than natural talent.",
+      questions: ["What instrument did the writer decide to learn?", "What difficulty did the writer face at first?", "What lesson did the writer learn from this experience?"]
+    },
+    {
+      title: "My Relationship with Social Media",
+      text: "For a long time, I spent several hours every day scrolling through social media without even realizing it. I would check my phone first thing in the morning and last thing before sleeping. Eventually, I noticed that this habit was affecting my concentration and making me feel more anxious, especially when comparing my life to what others posted online. Six months ago, I decided to make some changes. I deleted social media apps from my phone and only check them once a day, using a computer instead. This small change has made a noticeable difference: I read more books, sleep better, and feel less pressure to present a perfect image of my life. I still use social media to stay in touch with friends and family, but now it feels like a tool I control, rather than something that controls me.",
+      questions: ["How did social media affect the writer at first?", "What change did the writer make six months ago?", "How does the writer feel about social media now?"]
+    },
+    {
+      title: "Trying to Eat More Healthily",
+      text: "At the beginning of this year, I set a goal to improve my eating habits. For years, I had relied on fast food and ready-made meals because they were quick and convenient. However, I often felt tired and lacked energy throughout the day. I started by making small changes rather than trying to change everything at once. I began cooking simple meals at home using fresh vegetables, and I reduced the amount of sugar in my diet. I also started planning my meals for the week, which helped me avoid last-minute unhealthy choices. It wasn't always easy, especially during busy weeks at work, but after a few months, I noticed I had more energy and felt generally better. I still enjoy fast food occasionally, but now it is a treat rather than a daily habit.",
+      questions: ["Why did the writer want to change their eating habits?", "What changes did the writer make?", "How does the writer feel about fast food now?"]
+    },
+    {
+      title: "Traveling by Train",
+      text: "Although flying is often faster, I have grown to prefer traveling by train whenever possible. Train journeys allow me to see the countryside change gradually, from cities to farmland to mountains, which I find far more enjoyable than looking down at clouds from an airplane window. Trains also require less waiting time; there is no need to arrive hours early or go through long security checks. On a recent trip, I took an overnight train to visit a friend in another country. Although the journey took twelve hours, I was able to sleep, read, and even chat with other passengers in the dining car. By the time I arrived, I felt more relaxed than I usually do after a flight. Train travel is not always the cheapest option, but for me, the experience itself makes it worthwhile.",
+      questions: ["What does the writer enjoy seeing during train journeys?", "Why does the writer prefer trains over planes in terms of waiting time?", "What happened during the overnight train trip?"]
+    },
+    {
+      title: "Part-Time Jobs for Students",
+      text: "Many university students choose to take on part-time jobs while studying, and there are both benefits and drawbacks to this decision. On the positive side, working part-time can help students gain valuable experience, develop time-management skills, and earn extra money to cover living expenses. It can also make students more employable after graduation, since employers often value candidates who already have some work experience. However, balancing work and studies is not always easy. Some students find that a part-time job leaves them with less time to study, which can affect their grades, especially during exam periods. It can also lead to increased stress and less time for rest or social activities. Overall, I believe a part-time job can be a valuable experience for students, as long as they manage their time carefully and do not take on too many working hours.",
+      questions: ["What is one benefit of part-time jobs for students, according to the passage?", "What is one drawback mentioned?", "What condition does the writer give for a part-time job being valuable?"]
+    },
+    {
+      title: "Why I Keep a Journal",
+      text: "I have kept a journal for the past three years, writing in it almost every night before bed. At first, I started simply to practice my writing, but over time, it became something much more valuable to me. Writing down my thoughts helps me process difficult emotions and understand my own reactions to events during the day. When I feel stressed or confused about a decision, putting my thoughts on paper often helps me see the situation more clearly. I also enjoy looking back at old entries to see how much I have changed and grown. Some days, I only write a few sentences; other days, I fill several pages. Regardless of how much I write, the habit itself has become an important part of my daily routine, giving me a quiet moment to reflect before sleeping.",
+      questions: ["Why did the writer originally start journaling?", "How does journaling help the writer with difficult emotions?", "What does the writer enjoy about looking back at old entries?"]
+    },
+    {
+      title: "Adjusting to a New Culture",
+      text: "When I moved abroad for work three years ago, I expected some challenges, but I underestimated how difficult adjusting to a new culture would be. Simple daily tasks, like grocery shopping or making small talk with neighbors, felt confusing because the customs were so different from what I was used to. During the first few months, I often felt isolated, since I did not yet understand local humor or social expectations. Over time, however, I began making an effort to learn the language and observe how people interacted with each other. I also made friends with both locals and other foreigners, who helped explain cultural norms I didn't understand. Gradually, situations that once felt strange became familiar, and I started to appreciate aspects of the culture that were different from my own. Looking back, I believe this experience made me more open-minded and adaptable.",
+      questions: ["What made the writer feel isolated at first?", "What two things helped the writer adjust?", "How did the experience change the writer, according to the passage?"]
+    },
+  ],
+  B2: [
+    {
+      title: "The Psychology of Procrastination",
+      text: "Procrastination is often misunderstood as simple laziness, but psychologists argue that it is a far more complex behavior rooted in emotional regulation rather than time management. When faced with a task that triggers anxiety, boredom, or self-doubt, the brain seeks immediate relief by avoiding the source of discomfort, even though this avoidance creates greater stress later on. Interestingly, people who procrastinate are not necessarily unmotivated; many are perfectionists who delay starting a task because they fear producing imperfect work. Research suggests that self-compassion, rather than harsh self-criticism, is more effective in breaking this cycle, as guilt tends to reinforce the very avoidance it is meant to prevent. Breaking large tasks into smaller, manageable steps and addressing the underlying emotional trigger, rather than simply trying to force discipline, appears to be a more sustainable long-term strategy. Understanding procrastination as an emotional response rather than a character flaw allows individuals to approach the problem with more useful strategies.",
+      questions: ["According to the passage, what is procrastination primarily rooted in?", "Why do many perfectionists procrastinate?", "What strategy does research suggest is more effective than self-criticism?"]
+    },
+    {
+      title: "Rethinking Work-Life Balance",
+      text: "The concept of work-life balance is often presented as an equal division between professional obligations and personal time, yet this framing may be fundamentally flawed. Rather than treating work and life as opposing forces competing for the same finite hours, some researchers argue for a more integrated approach, one that considers how different life domains can support rather than undermine each other. For instance, an employee who feels genuinely engaged and valued at work may experience less stress overall, benefiting their personal relationships as a result. Conversely, rigid boundaries between work and personal life, if imposed without flexibility, can create additional pressure rather than relieving it. Critics of the traditional balance model suggest that organizations should focus less on enforcing strict separation and more on fostering environments where employees have genuine autonomy over how, when, and where they work. Ultimately, achieving a sustainable relationship between professional and personal life may depend less on balance itself and more on alignment between an individual's values and their working conditions.",
+      questions: ["What is the traditional framing of work-life balance criticized for in the passage?", "What alternative approach do some researchers suggest?", "According to critics, what should organizations focus on instead of strict separation?"]
+    },
+    {
+      title: "The Double-Edged Sword of Tourism",
+      text: "Tourism is frequently promoted as an unambiguous economic benefit for destination countries, generating employment and foreign revenue. However, the reality is considerably more complicated. While tourism can indeed stimulate local economies, it often does so unevenly, with profits disproportionately benefiting large hotel chains and international tour operators rather than local communities. Furthermore, popular destinations frequently experience overtourism, a phenomenon in which the sheer volume of visitors strains infrastructure, drives up the cost of living for residents, and gradually erodes the cultural authenticity that initially attracted travelers. Venice and Barcelona, for example, have both implemented measures to limit tourist numbers in response to local backlash. Proponents of sustainable tourism argue that the solution lies not in rejecting tourism altogether, but in redesigning it: spreading visitor numbers across seasons and regions, ensuring a greater share of revenue remains within local communities, and involving residents in decisions about how their environment is used. Without such reforms, the tension between economic benefit and community wellbeing seems likely to intensify.",
+      questions: ["What criticism is made about how tourism profits are distributed?", "What is 'overtourism', according to the passage?", "What solution do proponents of sustainable tourism suggest?"]
+    },
+    {
+      title: "Online Learning: Freedom or Isolation?",
+      text: "The rapid expansion of online education has been celebrated for democratizing access to learning, allowing students in remote areas or with limited financial resources to study subjects once available only to a privileged few. Proponents highlight the flexibility online courses offer, enabling learners to study at their own pace and around existing work or family commitments. However, this flexibility comes with significant trade-offs. Numerous studies have found that online students report higher rates of isolation and lower completion rates compared to their in-person counterparts, suggesting that the absence of face-to-face interaction may undermine motivation and accountability. Additionally, online learning places greater demands on self-discipline, a skill not evenly distributed among students regardless of ability. Some institutions have attempted to address these shortcomings by incorporating live discussion sessions and peer collaboration tools, aiming to recreate elements of the social experience found in traditional classrooms. Whether online education can ultimately match the depth of engagement offered by in-person learning remains an open and actively debated question.",
+      questions: ["What benefit of online education is highlighted by its proponents?", "What problem do studies mention regarding online students?", "How have some institutions tried to address this problem?"]
+    },
+    {
+      title: "The Case for Urban Green Spaces",
+      text: "As cities continue to expand, urban planners face growing pressure to balance the demand for housing and infrastructure with the preservation of green spaces such as parks, gardens, and tree-lined streets. Advocates for urban greenery argue that its benefits extend far beyond aesthetics. Research has consistently linked access to green spaces with improved mental health, reduced stress levels, and even lower rates of certain chronic illnesses. Green spaces also play a practical environmental role, helping to reduce urban temperatures, improve air quality, and manage stormwater runoff more effectively than concrete surfaces. Despite this evidence, green spaces are often the first casualty of urban development, as they generate less immediate economic return than commercial or residential construction. Some cities have begun reversing this trend by mandating minimum green space requirements for new developments or converting unused infrastructure, such as old railway lines, into public parks. Such initiatives suggest that with sufficient political will, dense urban environments and accessible nature need not be mutually exclusive.",
+      questions: ["What health benefits are linked to green spaces, according to the passage?", "Why are green spaces often removed during urban development?", "What example is given of cities reversing this trend?"]
+    },
+    {
+      title: "The Hidden Cost of Food Waste",
+      text: "An estimated one-third of all food produced globally is never consumed, lost somewhere along the journey from farm to table. This waste occurs at every stage of the supply chain: crops that are discarded for not meeting cosmetic standards, food that spoils during transport due to inadequate storage, and meals that are simply thrown away by consumers who purchase more than they need. The environmental consequences of this waste are considerable, given that producing food that is never eaten still consumes vast quantities of water, land, and energy, while decomposing food waste in landfills generates significant amounts of methane, a potent greenhouse gas. Addressing this issue requires coordinated action across multiple levels: retailers can relax cosmetic standards for produce, restaurants can adjust portion sizes and donate surplus food, and individual consumers can plan meals more carefully to avoid overbuying. Some governments have introduced legislation requiring supermarkets to donate unsold food rather than discard it, an approach that has shown promising early results in reducing landfill waste.",
+      questions: ["At what stages of the supply chain does food waste occur?", "Why is decomposing food waste environmentally harmful?", "What legislative approach has some governments introduced?"]
+    },
+    {
+      title: "Children, Screens, and Attention",
+      text: "Concerns about children's screen time have become a recurring feature of public discourse, with some experts warning of long-term effects on attention span and emotional development. Much of this concern centers on the design of digital platforms themselves, which are often engineered to maximize engagement through features such as autoplay videos, notifications, and variable rewards, techniques originally developed for gambling machines. Critics argue that children, whose capacity for self-regulation is still developing, are particularly vulnerable to these design choices. However, not all researchers agree on the severity or nature of the harm; some studies suggest that the content and context of screen use matter more than the amount of time spent, noting that educational or collaborative screen activities may have different effects than passive consumption. Rather than focusing solely on time limits, some experts now recommend that parents pay closer attention to what children are doing on screens and encourage a healthy mix of activities, both digital and offline, rather than treating all screen time as equally harmful.",
+      questions: ["What techniques are digital platforms accused of using to maximize engagement?", "Why are children considered particularly vulnerable to these techniques?", "What alternative approach do some experts now recommend instead of focusing on time limits?"]
+    },
+    {
+      title: "Bridging the Generational Divide at Work",
+      text: "Modern workplaces increasingly bring together employees from several generations, each shaped by distinct historical circumstances and technological environments, which can sometimes lead to friction in communication styles and expectations. Older employees may value formal hierarchies and face-to-face meetings, while younger colleagues often prefer flexible schedules, rapid digital communication, and a flatter organizational structure. These differences are sometimes framed in the media as a source of conflict, with each generation criticized for supposedly outdated or entitled attitudes. However, many organizational psychologists argue that this framing oversimplifies a more nuanced reality: generational differences are often smaller than assumed, and apparent conflicts frequently stem from differing communication preferences rather than fundamentally different values. Companies that actively encourage cross-generational mentorship, pairing experienced employees with newer staff to exchange skills in both directions, tend to report improved collaboration and reduced tension. Rather than viewing generational diversity as an obstacle, such approaches suggest it can become a genuine organizational asset when managed thoughtfully.",
+      questions: ["What kind of differences in preference are mentioned between older and younger employees?", "What do organizational psychologists argue about generational conflict?", "What strategy has been shown to reduce generational tension at work?"]
+    },
+    {
+      title: "The Quiet Appeal of Minimalism",
+      text: "In recent years, minimalism has grown from a niche aesthetic preference into a broader lifestyle movement, encouraging people to own fewer possessions and prioritize experiences over material accumulation. Advocates argue that reducing physical clutter can lead to a corresponding reduction in mental clutter, as fewer possessions mean fewer decisions, less maintenance, and reduced anxiety about loss or damage. This appeal has grown particularly strong in societies characterized by high consumerism, where minimalism is sometimes framed as a quiet form of resistance against constant marketing pressure. Critics, however, point out that minimalism as it is often portrayed online, curated white rooms and expensive, carefully chosen furniture, can itself become another form of consumption, accessible mainly to those with sufficient income to be selective about what they own. This tension highlights a broader question about whether minimalism, in practice, challenges consumer culture or merely repackages it into a more aesthetically pleasing form. Regardless of these criticisms, many practitioners report genuine benefits from owning less, even if the movement's public image remains contested.",
+      questions: ["What psychological benefit do advocates of minimalism claim?", "What criticism is made of minimalism as portrayed online?", "What broader question does this criticism raise?"]
+    },
+    {
+      title: "Sleep, Productivity, and the Myth of Hustle",
+      text: "For decades, a certain narrative of professional success has celebrated long hours and minimal sleep as evidence of dedication and ambition, often referred to informally as 'hustle culture'. Increasingly, however, sleep researchers are challenging this narrative, presenting substantial evidence that chronic sleep deprivation impairs, rather than enhances, cognitive performance, decision-making, and creativity. Studies have shown that individuals operating on insufficient sleep often fail to recognize the extent of their own impairment, mistakenly believing their performance remains unaffected. This disconnect may help explain why sleep deprivation continues to be worn as a badge of honor in many competitive professional environments, despite mounting evidence of its costs. Some companies have begun to respond to this research by discouraging late-night emails, offering nap spaces, or training managers to recognize signs of burnout among their teams. Whether such measures represent a genuine cultural shift or merely a superficial gesture remains to be seen, but the underlying research increasingly suggests that treating rest as optional, rather than essential, may ultimately undermine the very productivity it is meant to support.",
+      questions: ["What does 'hustle culture' celebrate, according to the passage?", "What have sleep researchers found about people's ability to judge their own impairment?", "What measures have some companies introduced in response to this research?"]
+    },
+  ],
+  C1: [
+    {
+      title: "Algorithms and the Illusion of Neutrality",
+      text: "Algorithmic systems are frequently described as objective, on the assumption that mathematical processes are inherently free from human bias. This assumption, however, obscures the extent to which algorithms are shaped by the data on which they are trained and the choices made by those who design them. Historical inequalities embedded in training data can be inadvertently reproduced, and in some cases amplified, once a system is deployed at scale. A well-documented example lies in hiring algorithms that, having learned from decades of biased recruitment data, systematically disadvantaged certain applicants despite exhibiting no explicit discriminatory intent. Proponents of algorithmic decision-making argue that such systems remain preferable to human judgment, which is subject to inconsistency and overt prejudice. Critics counter that the opacity of many algorithms, often protected as proprietary, makes it exceedingly difficult to identify and correct these embedded biases. The debate ultimately hinges on a deeper question: whether neutrality is a property that can be engineered, or whether it is an illusion that obscures rather than eliminates human judgment.",
+      questions: ["What assumption about algorithms does the passage challenge?", "What example does the author use to illustrate algorithmic bias?", "What is the central question the debate 'hinges on', according to the passage?"]
+    },
+    {
+      title: "The Ethics of Artificial Intelligence",
+      text: "As artificial intelligence systems become increasingly capable of making decisions with real-world consequences, from medical diagnoses to criminal sentencing recommendations, the question of how to embed ethical considerations into their design has moved from academic speculation to urgent practical concern. One persistent difficulty lies in the fact that ethical frameworks themselves are contested; a system designed to maximize aggregate welfare may produce outcomes that conflict with principles of individual rights, while a system prioritizing strict rule-following may fail to account for morally relevant exceptions that a human decision-maker would readily recognize. Compounding this difficulty is the opacity of many advanced AI systems, whose internal decision-making processes are not easily interpretable even by their own developers, making it difficult to audit whether a given decision was reached for ethically defensible reasons. Some scholars advocate for embedding explicit ethical constraints directly into system architecture, while others argue that meaningful oversight must ultimately remain a human responsibility, with AI serving only as a decision-support tool rather than an autonomous arbiter. The resolution of this debate carries significant implications, not merely for technological design, but for how societies choose to delegate moral responsibility in an increasingly automated world.",
+      questions: ["What difficulty does the passage identify regarding ethical frameworks for AI?", "Why does the opacity of AI systems complicate ethical oversight?", "What two differing positions are presented regarding how to address this challenge?"]
+    },
+    {
+      title: "Reassessing Economic Inequality",
+      text: "Economic inequality is frequently discussed in terms of income disparity alone, yet this framing risks obscuring more structurally significant dimensions of the issue, particularly disparities in wealth, which tend to be far more concentrated and more resistant to redistribution than income. Wealth, unlike income, compounds over generations, meaning that disparities established decades or even centuries ago continue to shape present-day opportunity through mechanisms such as inheritance, access to quality education, and preferential access to capital markets. Some economists argue that policies focused narrowly on raising minimum wages or adjusting income tax brackets, while valuable, are insufficient to meaningfully address inequality if they leave the underlying distribution of wealth largely untouched. Proposed alternatives, such as wealth taxes or expanded inheritance taxation, face significant political and practical obstacles, including capital flight and valuation difficulties for illiquid assets. Critics of redistributive approaches more broadly contend that such measures risk discouraging investment and entrepreneurial risk-taking, though empirical evidence on this point remains contested and highly dependent on how specific policies are designed and implemented.",
+      questions: ["Why does the passage argue that wealth disparity is different from income disparity?", "What obstacles do proposed wealth taxes face?", "What do critics of redistribution argue?"]
+    },
+    {
+      title: "Cultural Relativism and Universal Values",
+      text: "The debate between cultural relativism and moral universalism raises one of the most enduring tensions in ethical philosophy: whether moral judgments can only be understood within their specific cultural context, or whether certain values hold validity across all human societies regardless of cultural variation. Proponents of cultural relativism caution against imposing one culture's moral framework onto another, arguing that doing so often reflects historical patterns of colonial domination rather than genuine ethical insight. However, critics of strict relativism point out that taken to its logical conclusion, this position struggles to condemn practices widely regarded as harmful, such as systematic discrimination or violence, if those practices are deeply embedded within a given cultural tradition. In response, some philosophers propose a middle position, sometimes termed 'weak universalism', which holds that certain minimal standards, such as prohibitions against extreme cruelty, may be justifiably applied across cultures, while acknowledging that many other practices legitimately vary according to cultural context. This compromise remains contested, as critics on both sides argue it fails to resolve the underlying philosophical tension it attempts to bridge.",
+      questions: ["What do proponents of cultural relativism warn against?", "What difficulty do critics identify with strict cultural relativism?", "What compromise position is proposed, and what is it called?"]
+    },
+    {
+      title: "Living in the Attention Economy",
+      text: "The term 'attention economy' describes a system in which human attention itself has become the primary commodity being bought and sold, particularly by digital platforms whose business models depend on maximizing the time users spend engaged with their content. This economic logic has profound implications for the design of digital technology, incentivizing features explicitly engineered to capture and retain attention, sometimes at the expense of users' broader wellbeing or ability to concentrate on other tasks. Critics argue that this dynamic represents a fundamental misalignment between the interests of technology companies and the interests of their users, since a platform optimized purely for engagement has little inherent incentive to promote, for instance, accurate information or genuine social connection if less accurate or more divisive content proves more attention-capturing. Some technologists have proposed alternative business models, such as subscription-based platforms that do not rely on advertising revenue, as a potential structural remedy, though such models have struggled to achieve comparable scale. Whether meaningful reform is achievable through market mechanisms alone, or whether it requires regulatory intervention, remains a central and unresolved question in contemporary technology policy.",
+      questions: ["What does the term 'attention economy' describe?", "What misalignment of interests do critics identify?", "What alternative business model has been proposed as a possible remedy?"]
+    },
+    {
+      title: "The Trade-offs of Climate Policy",
+      text: "Designing effective climate policy requires navigating a series of difficult trade-offs, few of which admit straightforward or universally satisfactory solutions. Carbon taxation, often favored by economists for its efficiency in incentivizing emissions reductions across an entire economy, tends to disproportionately burden lower-income households, who spend a larger share of their income on energy and transportation, unless carefully designed rebate mechanisms are included. Regulatory approaches, such as mandated efficiency standards, avoid this particular burden but are often criticized as less economically efficient, since they apply uniformly regardless of the specific costs faced by different industries. At the international level, climate negotiations face an additional layer of complexity, as historical responsibility for emissions rests disproportionately with wealthy industrialized nations, while the most severe consequences of climate change are frequently borne by poorer nations that contributed comparatively little to the problem. This asymmetry has made questions of financial compensation and technology transfer central, and often contentious, features of international climate negotiations. Resolving these tensions will likely require not a single optimal policy, but a carefully calibrated combination of mechanisms, tailored to differing national and economic circumstances.",
+      questions: ["Why can carbon taxation disproportionately burden lower-income households?", "What criticism is made of regulatory approaches like efficiency standards?", "What asymmetry complicates international climate negotiations?"]
+    },
+    {
+      title: "Free Will Under Scrutiny",
+      text: "Advances in neuroscience have reinvigorated a philosophical debate with ancient origins: the question of whether human free will is a coherent concept, or an intuitive illusion generated by processes that are, in principle, fully determined by prior physical causes. Certain experiments have demonstrated that measurable neural activity associated with a decision can be detected before an individual reports conscious awareness of having made that decision, a finding some interpret as evidence that conscious will is not the true origin of our actions, but rather a post-hoc narrative constructed by the brain. Critics of this interpretation argue that such experiments involve simple, low-stakes decisions and may not generalize to more complex, deliberative choices involving reasoning over time. Furthermore, some philosophers contend that even if our choices are ultimately determined by prior causes, this need not undermine meaningful concepts of responsibility or agency, provided that our actions still flow from our own reasoning, values, and character, an account sometimes termed 'compatibilism'. The debate remains unresolved, touching not only on abstract metaphysics but on practical questions of how societies should assign moral and legal responsibility for human behavior.",
+      questions: ["What finding from neuroscience experiments is described in the passage?", "What criticism is raised against this interpretation?", "What position is 'compatibilism', according to the passage?"]
+    },
+    {
+      title: "The Paradox of Choice",
+      text: "Conventional economic theory generally assumes that increasing the number of options available to a consumer can only improve, or at worst leave unchanged, their overall wellbeing, since additional choices simply expand the range of possibilities without eliminating existing ones. However, psychological research has increasingly challenged this assumption, documenting a phenomenon sometimes termed the 'paradox of choice', in which an excessive number of options can lead to decision paralysis, increased anxiety, and diminished satisfaction with whatever option is ultimately selected. This effect has been observed across contexts ranging from consumer products to retirement investment plans, where employees offered too many fund options were found, counterintuitively, less likely to enrol at all. Proposed explanations include the increased cognitive burden of comparing numerous alternatives, as well as heightened opportunity-cost regret, the nagging awareness that a rejected option might have proven superior. These findings have prompted some organizations to deliberately curate or limit the choices presented to consumers and employees, a strategy that, while improving satisfaction and decision-making in many cases, raises its own ethical questions about who decides which options are worth offering in the first place.",
+      questions: ["What does conventional economic theory generally assume about increasing choice?", "What is the 'paradox of choice'?", "What ethical question does the passage raise about curating choices?"]
+    },
+    {
+      title: "Globalization and the Question of Local Identity",
+      text: "Globalization has facilitated an unprecedented degree of economic and cultural exchange, yet this integration has provoked considerable anxiety regarding the erosion of distinct local identities in the face of increasingly homogenized global culture. Critics point to the widespread proliferation of multinational brands, media franchises, and consumption patterns as evidence that globalization tends to favor a narrow set of dominant cultural exports, often originating from a small number of wealthy nations, at the expense of local traditions and languages. Proponents counter that globalization is rarely a purely one-directional process; local cultures frequently adapt and reinterpret global influences in ways that produce genuinely new hybrid forms, rather than simple cultural erasure, a phenomenon sometimes described by scholars as 'glocalization'. Empirical evidence tends to support elements of both positions: while certain minority languages and traditions have indeed declined under globalizing pressures, other local cultural expressions have found new audiences and revitalization through global platforms and markets. This suggests that the relationship between globalization and local identity is neither straightforwardly destructive nor straightforwardly benign, but highly dependent on the specific economic and political power dynamics at play in each context.",
+      questions: ["What concern do critics of globalization raise regarding local identity?", "What is 'glocalization', according to the passage?", "What does empirical evidence suggest about the relationship between globalization and local identity?"]
+    },
+    {
+      title: "The Limits of Scientific Objectivity",
+      text: "Science is often characterized as a uniquely objective method of inquiry, insulated from the subjective biases that shape other forms of human knowledge. While the scientific method's emphasis on empirical testing and peer review does provide meaningful safeguards against certain forms of error, historians and philosophers of science have documented numerous instances in which prevailing social assumptions influenced which hypotheses were considered worth testing in the first place, which results were readily accepted, and which anomalous findings were dismissed or overlooked. This does not imply that scientific findings are merely arbitrary social constructs, a position that would struggle to explain science's demonstrable predictive and technological success. Rather, it suggests a more nuanced picture: individual scientific findings may be shaped by the assumptions and priorities of their era, even as the broader scientific process, operating over longer timescales and subject to correction through further evidence, tends to gradually correct significant errors. Recognizing this dynamic need not undermine confidence in science as a method, but it does caution against treating any single scientific consensus as entirely free from the social and historical context in which it was produced.",
+      questions: ["What safeguards does the scientific method provide against error, according to the passage?", "What does the passage NOT conclude from these historical influences?", "What more nuanced picture does the passage suggest instead?"]
+    },
+  ],
+  C2: [
+    {
+      title: "The Erosion of Deliberative Discourse",
+      text: "Public discourse, once presumed to rest on a shared commitment to reasoned argument, increasingly betrays symptoms of a deeper epistemic malaise: interlocutors no longer merely disagree over conclusions but inhabit incommensurable evidentiary universes, each fortified by algorithmically curated information ecosystems that reward affirmation over scrutiny. This fragmentation is not merely a matter of differing opinions but of divergent standards for what constitutes legitimate evidence in the first place, a condition some theorists have termed 'epistemic tribalism'. The temptation is to attribute this decay wholesale to technology, yet such an account risks obscuring longstanding structural incentives, media economics chief among them, that have always rewarded polarizing content over nuance. Whether any institutional remedy, be it media literacy initiatives, platform regulation, or a reinvigorated civic culture, can arrest this drift remains genuinely uncertain, not least because proposed solutions are themselves filtered through the very polarized discourse they seek to repair, a recursive difficulty that lends the problem an almost intractable quality.",
+      questions: ["What does the passage mean by 'epistemic tribalism'?", "What does the passage caution against attributing the decay of discourse to?", "Why does the passage describe proposed remedies as facing a 'recursive difficulty'?"]
+    },
+    {
+      title: "Sovereignty in an Interdependent World",
+      text: "The Westphalian conception of state sovereignty, predicated on the notion of absolute and exclusive authority within fixed territorial boundaries, sits increasingly uneasily alongside the practical realities of an interconnected global order in which capital, pathogens, carbon emissions, and data flow with scant regard for cartographic lines. Some scholars of international relations argue that sovereignty, far from being abolished by this interdependence, has instead been reconfigured: states retain formal authority while ceding substantive control over outcomes that matter most to their citizens, from financial stability to public health. Others contend this represents a more fundamental erosion, one masked by the persistence of sovereign rhetoric even as effective governance migrates toward supranational bodies, multinational corporations, and informal transnational networks largely insulated from democratic accountability. The resulting tension, between a nominal sovereignty that legitimizes domestic political authority and a de facto governance exercised elsewhere, arguably underlies much of the populist backlash against globalization witnessed across disparate political contexts in recent decades.",
+      questions: ["How does the passage describe the tension between formal sovereignty and 'de facto governance'?", "What do some scholars argue sovereignty has been 'reconfigured' into, rather than abolished?", "What contemporary political phenomenon does the passage link to this tension?"]
+    },
+    {
+      title: "The Aesthetics of Ambiguity in Modernist Fiction",
+      text: "Modernist fiction's characteristic reluctance to furnish readers with authoritative narrative closure has frequently been read as a formal correlate of the epistemological uncertainties that preoccupied its practitioners, an aesthetic enactment of the conviction that consciousness itself resists the tidy resolutions imposed by conventional plotting. Yet to characterize this ambiguity merely as thematic mimicry, form obediently mirroring philosophical content, risks flattening what is in fact a considerably more active and destabilizing textual strategy. By withholding interpretive certainty, modernist texts implicate the reader as co-producer of meaning, a redistribution of interpretive labor that some critics regard as a democratizing gesture and others as an abdication of authorial responsibility that renders the text vulnerable to arbitrary or contradictory readings. This tension, between ambiguity as liberating openness and ambiguity as a symptom of interpretive anarchy, has proven remarkably resistant to critical consensus, in part because the very indeterminacy under discussion undermines any definitive adjudication of the debate itself.",
+      questions: ["What does the passage suggest is an inadequate way to characterize modernist ambiguity?", "What effect does withholding interpretive certainty have on the reader's role, according to the passage?", "Why does the passage suggest this critical debate resists consensus?"]
+    },
+    {
+      title: "The Limits of Cost-Benefit Reasoning in Public Policy",
+      text: "Cost-benefit analysis has become the default idiom through which democratic societies adjudicate contested policy questions, prized for its apparent capacity to render incommensurable values, safety, economic growth, environmental preservation, into a common metric amenable to rational comparison. This apparent virtue, however, conceals a considerable sleight of hand: the translation of qualitative goods into monetary equivalents necessarily embeds contestable normative assumptions, most notoriously in the practice of assigning a discrete monetary value to human life or to the welfare of future generations not yet born. Critics further observe that the technique's veneer of technocratic neutrality can obscure rather than illuminate the distributive question of who bears costs and who reaps benefits, a concern of particular salience when the burdens of a given policy fall disproportionately on populations lacking effective political voice. Defenders concede these limitations but maintain that the alternative, an unstructured weighing of incommensurable values by fiat, offers no less arbitrary and considerably less transparent a basis for decision, a rejoinder that shifts rather than resolves the underlying normative dispute.",
+      questions: ["What 'sleight of hand' does the passage attribute to cost-benefit analysis?", "What distributive concern do critics raise about the technique?", "How do defenders respond to these criticisms, according to the passage?"]
+    },
+    {
+      title: "Memory, Narrative, and the Construction of Selfhood",
+      text: "Contemporary cognitive science has substantially destabilized the folk-psychological assumption that autobiographical memory functions as a faithful archival record of past experience, revealing instead a reconstructive process in which each act of recollection subtly reshapes the very memory being retrieved, incorporating present concerns, subsequent knowledge, and even suggestions encountered after the original event. This finding carries unsettling implications for the philosophical notion of narrative identity, the view that selfhood is constituted through an ongoing autobiographical narrative that lends coherence to an otherwise disjointed sequence of experiences, since the raw material of that narrative turns out to be considerably more malleable and retrospectively fabricated than the notion of a stable, continuous self would seem to require. Some philosophers have responded by embracing a more provisional conception of identity, one that treats the self not as a fixed entity uncovered through introspection but as a continuously revised construction, contingent and provisional rather than discovered and fixed, a reframing that some find liberating and others find corrosive of any robust notion of personal continuity or moral responsibility over time.",
+      questions: ["What does cognitive science reveal about the reconstructive nature of memory?", "What implication does this have for the philosophical notion of 'narrative identity'?", "How have some philosophers responded to this challenge, according to the passage?"]
+    },
+    {
+      title: "The Paradox of Meritocratic Ideology",
+      text: "Meritocracy, as both an organizing principle and a legitimating narrative for social and economic hierarchies, promises that reward will track effort and talent rather than inherited privilege, a promise whose persuasive force derives precisely from its apparent fairness relative to overtly hereditary systems of status. Sociological research, however, has repeatedly documented a troubling irony: societies that most fervently espouse meritocratic ideals frequently exhibit levels of intergenerational immobility comparable to, or even exceeding, those of more explicitly stratified societies, in part because the rhetoric of merit obscures rather than eliminates the manifold ways in which inherited advantage, cultural capital, informal networks, early educational investment, continues to shape ostensibly merit-based outcomes. More perniciously still, the meritocratic frame can intensify rather than mitigate the psychological costs of inequality, since it invites those who fail to attain success to interpret their circumstances as a verdict on personal inadequacy rather than as the product of structural constraint, a reattribution of blame that meritocracy's architects rarely intended but which its critics regard as among its most corrosive unintended consequences.",
+      questions: ["What promise does meritocratic ideology make, and why is this promise persuasive?", "What 'troubling irony' does sociological research document regarding meritocratic societies?", "What psychological cost of meritocracy does the passage describe as an 'unintended consequence'?"]
+    },
+    {
+      title: "Translation and the Illusion of Equivalence",
+      text: "The task of literary translation is too often popularly conceived as a mechanical exercise in substitution, the swapping of words in one language for their purported equivalents in another, a conception that obscures the extent to which meaning in literary texts is inextricably bound to the particular sonic, connotative, and cultural resonances of the source language, resonances that rarely if ever survive intact the passage into another linguistic system. Skilled translators, accordingly, are compelled to make a continual series of interpretive judgments, judgments that inevitably involve loss along some dimensions and compensatory invention along others, such that the resulting text might more accurately be described as a new work in conversation with its source than as a transparent conduit for an unchanged original. This recognition has prompted some theorists to abandon the very ideal of equivalence as a governing criterion for translation quality, proposing instead that translations be evaluated according to the richness and coherence of the new relationship they establish with their own target-language readership, a reorientation that, while intellectually liberating, unsettles the intuitive faith most readers place in translated texts as faithful windows onto foreign literatures.",
+      questions: ["What popular conception of translation does the passage challenge?", "What must translators do, according to the passage, when equivalence is unattainable?", "What alternative criterion do some theorists propose for evaluating translation quality?"]
+    },
+    {
+      title: "The Precautionary Principle and Its Discontents",
+      text: "The precautionary principle, broadly the injunction that scientific uncertainty regarding the potential harms of a technology or practice should counsel restraint rather than a presumption of permissibility, has become an influential, if contested, touchstone in environmental and public health regulation, most visibly in debates surrounding genetically modified organisms, novel pharmaceuticals, and emerging industrial chemicals. Proponents regard the principle as a necessary corrective to a regulatory culture historically biased toward permitting innovation until harm is conclusively demonstrated, a bias that has, in numerous documented historical instances, resulted in significant and irreversible damage before corrective action was taken. Critics counter that the principle, applied without sufficient rigor, risks an asymmetric and ultimately incoherent standard, since virtually any innovation carries some conceivable risk, rendering the principle capable in the extreme of justifying near-total regulatory paralysis while conveniently ignoring the demonstrable risks of forgoing beneficial innovations altogether. Reconciling these competing concerns has prompted several regulatory bodies to adopt more calibrated formulations, weighing the magnitude, reversibility, and probability of potential harms against the foregone benefits of inaction, though critics on both sides continue to dispute where, precisely, this balance ought to be struck.",
+      questions: ["What historical bias does the precautionary principle aim to correct, according to its proponents?", "What is the central criticism leveled against the principle by its detractors?", "How have some regulatory bodies attempted to reconcile these competing concerns?"]
+    },
+    {
+      title: "The Commodification of Authenticity",
+      text: "Contemporary consumer culture exhibits a peculiar and self-undermining fixation on 'authenticity', a term invoked with increasing frequency to market goods and experiences, artisanal foods, heritage tourism, handcrafted objects, precisely because they are positioned as antidotes to the perceived homogeneity and artifice of mass production, even as the very act of marketing authenticity necessarily subjects it to the standardizing logic of commercial exchange it purports to resist. This paradox is not merely incidental but arguably constitutive of how authenticity now functions: it operates less as an intrinsic property of an object or experience and more as a symbolic value conferred through curated presentation, provenance narratives, and price signaling, such that the pursuit of the authentic becomes, ironically, an exercise in the sophisticated staging of its appearance. Sociologists studying this phenomenon note that this does not necessarily render such experiences worthless or their pleasures illusory, but it does complicate any straightforward opposition between the authentic and the manufactured, suggesting instead that all cultural experience under advanced capitalism exists somewhere along a spectrum of mediated construction, rather than at some pure, unmediated pole.",
+      questions: ["Why does the passage describe the marketing of authenticity as 'self-undermining'?", "How does the passage suggest authenticity now actually 'functions' in consumer culture?", "What conclusion do sociologists draw about the opposition between the authentic and the manufactured?"]
+    },
+    {
+      title: "Institutional Memory and the Problem of Path Dependence",
+      text: "Organizations, whether corporate, governmental, or academic, are frequently confounded by their own institutional memory, a phenomenon in which decisions and structures established in response to circumstances long since dissolved continue to exert disproportionate influence over present conduct, a dynamic that economists and organizational theorists term path dependence. This persistence is rarely attributable to mere inertia or oversight; rather, entrenched procedures typically accrue defenders whose professional standing, expertise, or resource allocation is bound up with their continuation, generating a coalition of interests resistant to reform regardless of whether the original rationale for a given practice remains valid. Compounding this difficulty is the epistemic challenge of distinguishing genuinely load-bearing institutional knowledge, the accumulated, often tacit understanding that enables an organization to function effectively, from mere historical accident dressed in the legitimating language of tradition, a distinction that is frequently invisible to insiders too immersed in existing arrangements to recognize which elements are essential and which merely inherited. Meaningful institutional reform, accordingly, often requires not merely new leadership or fresh incentives but a deliberate and uncomfortable interrogation of which practices actually serve present purposes.",
+      questions: ["What is 'path dependence', as described in the passage?", "Why does the passage suggest entrenched procedures resist reform?", "What epistemic challenge does the passage identify regarding institutional knowledge?"]
+    },
+  ]
+};
+
+/* =========================================================================
+   APP LOGIC — no need to edit below this line.
+   ========================================================================= */
+
+const LEVELS = ["A1","A2","B1","B2","C1","C2"];
+
+// ---- Tabs ----
+const tabGameBtn = document.getElementById('tabGameBtn');
+const tabLibBtn = document.getElementById('tabLibBtn');
+const gamePanel = document.getElementById('gamePanel');
+const libPanel = document.getElementById('libPanel');
+
+tabGameBtn.onclick = () => switchTab('game');
+tabLibBtn.onclick = () => switchTab('lib');
+function switchTab(which){
+  const gameActive = which === 'game';
+  tabGameBtn.classList.toggle('active', gameActive);
+  tabLibBtn.classList.toggle('active', !gameActive);
+  gamePanel.classList.toggle('active', gameActive);
+  libPanel.classList.toggle('active', !gameActive);
+}
+
+// ---- Level pickers ----
+function buildLevelRow(container, currentLevel, onSelect){
+  container.innerHTML = '';
+  LEVELS.forEach(lvl => {
+    const btn = document.createElement('button');
+    btn.className = 'level-stamp' + (lvl === currentLevel ? ' active' : '');
+    btn.textContent = lvl;
+    btn.onclick = () => onSelect(lvl);
+    container.appendChild(btn);
+  });
+}
+
+// ---- Game state ----
+let gameLevel = "A1";
+let score = 0, streak = 0;
+let currentSentence = "";
+let currentWords = [];      // correct order
+let placedIndices = [];     // indices (into scrambled array) placed so far
+let scrambled = [];         // scrambled word list with unique ids
+let usedThisLevel = new Set();
+
+const answerLine = document.getElementById('answerLine');
+const tray = document.getElementById('tray');
+const feedback = document.getElementById('feedback');
+const progressVal = document.getElementById('progressVal');
+const scoreVal = document.getElementById('scoreVal');
+const streakVal = document.getElementById('streakVal');
+
+function refreshGameLevelRow(){
+  buildLevelRow(document.getElementById('gameLevels'), gameLevel, (lvl) => {
+    gameLevel = lvl;
+    usedThisLevel.clear();
+    refreshGameLevelRow();
+    loadNewSentence();
+  });
+}
+
+function pickSentence(){
+  const pool = SENTENCES[gameLevel];
+  let idx = Math.floor(Math.random() * pool.length);
+  if (usedThisLevel.size < pool.length){
+    let tries = 0;
+    while (usedThisLevel.has(idx) && tries < 20){
+      idx = Math.floor(Math.random() * pool.length);
+      tries++;
+    }
+  } else {
+    usedThisLevel.clear();
+  }
+  usedThisLevel.add(idx);
+  return pool[idx];
+}
+
+function loadNewSentence(){
+  feedback.textContent = '';
+  feedback.className = 'feedback';
+  hintLine.textContent = '';
+  hintsUsed = 0;
+  currentSentence = pickSentence();
+  currentWords = currentSentence.replace(/\.$/,'').split(' ');
+  // build scrambled tile list
+  scrambled = currentWords.map((w, i) => ({ text: w, id: i, used: false }));
+  shuffleUntilDifferent(scrambled, currentWords);
+  placedIndices = [];
+  progressVal.textContent = gameLevel + " sentence";
+  renderTray();
+  renderAnswer();
+}
+
+function shuffleUntilDifferent(arr, originalWords){
+  let attempts = 0;
+  do {
+    for (let i = arr.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i+1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    attempts++;
+  } while (arr.map(t => t.text).join(' ') === originalWords.join(' ') && attempts < 10 && arr.length > 1);
+}
+
+function renderTray(){
+  tray.innerHTML = '';
+  scrambled.forEach(tile => {
+    if (tile.used) return;
+    const el = document.createElement('button');
+    el.className = 'tile';
+    el.textContent = tile.text;
+    el.onclick = () => placeTile(tile.id);
+    tray.appendChild(el);
+  });
+}
+
+function renderAnswer(){
+  answerLine.innerHTML = '';
+  placedIndices.forEach(id => {
+    const tile = scrambled.find(t => t.id === id);
+    const el = document.createElement('button');
+    el.className = 'tile placed';
+    el.textContent = tile.text;
+    el.onclick = () => removeTile(id);
+    answerLine.appendChild(el);
+  });
+}
+
+function placeTile(id){
+  const tile = scrambled.find(t => t.id === id);
+  tile.used = true;
+  placedIndices.push(id);
+  renderTray();
+  renderAnswer();
+}
+
+function removeTile(id){
+  const tile = scrambled.find(t => t.id === id);
+  tile.used = false;
+  placedIndices = placedIndices.filter(i => i !== id);
+  renderTray();
+  renderAnswer();
+}
+
+document.getElementById('checkBtn').onclick = () => {
+  const built = placedIndices.map(id => scrambled.find(t => t.id === id).text).join(' ');
+  const target = currentWords.join(' ');
+  if (built.length === 0){
+    feedback.textContent = "Place some words first!";
+    feedback.className = 'feedback wrong';
+    return;
+  }
+  if (built === target){
+    score += 10;
+    streak += 1;
+    feedback.textContent = "Correct! Well done. ✓";
+    feedback.className = 'feedback correct';
+    scoreVal.textContent = score;
+    streakVal.textContent = streak;
+    setTimeout(loadNewSentence, 900);
+  } else {
+    streak = 0;
+    streakVal.textContent = streak;
+    feedback.textContent = "Not quite right — check the word order and try again.";
+    feedback.className = 'feedback wrong';
+  }
+};
+
+document.getElementById('clearBtn').onclick = () => {
+  scrambled.forEach(t => t.used = false);
+  placedIndices = [];
+  renderTray();
+  renderAnswer();
+  feedback.textContent = '';
+  hintLine.textContent = '';
+};
+
+const hintLine = document.getElementById('hintLine');
+let hintsUsed = 0;
+
+document.getElementById('hintBtn').onclick = () => {
+  const nextCorrectWord = currentWords[placedIndices.length];
+  if (!nextCorrectWord){
+    hintLine.textContent = "Sentence already complete — press Check.";
+    return;
+  }
+  hintsUsed += 1;
+  const candidate = scrambled.find(t => !t.used && t.text === nextCorrectWord);
+  if (candidate) placeTile(candidate.id);
+  const remaining = currentWords.length - placedIndices.length;
+  hintLine.textContent = remaining > 0
+    ? `Hint ${hintsUsed}: word placed for you — ${remaining} word${remaining === 1 ? '' : 's'} left.`
+    : `Hint ${hintsUsed}: last word placed — press Check.`;
+};
+
+document.getElementById('nextBtn').onclick = loadNewSentence;
+
+// ---- Library ----
+let libLevel = "A1";
+const libList = document.getElementById('libList');
+
+function refreshLibLevelRow(){
+  buildLevelRow(document.getElementById('libLevels'), libLevel, (lvl) => {
+    libLevel = lvl;
+    refreshLibLevelRow();
+    renderLibrary();
+  });
+}
+
+function renderLibrary(){
+  libList.innerHTML = '';
+  const passages = PASSAGES[libLevel] || [];
+  if (passages.length === 0){
+    libList.innerHTML = '<p style="color:var(--ink-soft)">No passages yet at this level — add one in the DATA section.</p>';
+    return;
+  }
+  passages.forEach((p, idx) => {
+    const card = document.createElement('div');
+    card.className = 'lib-card';
+    const wordCount = p.text.trim().split(/\s+/).length;
+    const readTime = Math.max(1, Math.round(wordCount / 130));
+    card.innerHTML = `
+      <div class="lib-head">
+        <div>
+          <h3>${p.title}</h3>
+          <div class="lib-meta">${wordCount} words • ~${readTime} min read</div>
+        </div>
+        <span class="lib-badge">${libLevel}</span>
+      </div>
+      <div class="lib-preview">${p.text.slice(0,110)}…</div>
+      <div class="lib-full">
+        <p>${p.text}</p>
+        <div class="lib-questions">
+          <p>Think about it:</p>
+          <ol>${p.questions.map(q => `<li>${q}</li>`).join('')}</ol>
+        </div>
+      </div>
+    `;
+    card.onclick = (e) => card.classList.toggle('open');
+    libList.appendChild(card);
+  });
+}
+
+// ---- init ----
+refreshGameLevelRow();
+refreshLibLevelRow();
+loadNewSentence();
+renderLibrary();
+</script>
+
+</body>
+</html>
